@@ -2,52 +2,28 @@
   "relayer": {},
   "chains": [
     {
-      "name": "celo",
-      "type": "celo",
-      "id": 2,
-      "endpoint": "wss://alfajores-forno.celo-testnet.org",
-      "from": "0x12F0aA01E222D3FBb999A1aD902dc70cbea7000b",
-      "bridge": "0x7B4ff372ec4159404c6d216C34F6d0B29F080665",
-      "erc20Handler": "0x442E7f13AA0cfAbF3FfaEfA4649f5fBe68ff9db2",
-      "gasLimit": 9000000,
+      "name": "w-chain",
+      "type": "evm",
+      "id": 0,
+      "endpoint": "wss://rpc-testnet.w-chain.com/ws",
+      "from": "0x551ac947b80527901b7E2093755dEDA3F9D2eda9",
+      "bridge": "0x1469a7842BFD9ED786Dbb5044c4Dc5025a241827",
+      "erc20Handler": "0xE26b2BF14664FD9C932CaDC3cA8C779d5BbFF913",
+      "gasLimit": 800000000000,
       "maxGasPrice": 2000000000,
       "blockConfirmations": 10
     },
     {
-      "name": "goerli",
+      "name": "ethereum",
       "type": "evm",
       "id": 1,
-      "endpoint": "wss://eth-goerli.alchemyapi.io/v2/9jcoyKYv-uf2VMIALqA_ul6qBT5sXMJh",
-      "from": "0x12F0aA01E222D3FBb999A1aD902dc70cbea7000b",
-      "bridge": "0x537949Ad4d0CBf45E4Bb6B921FF49acD93cd040b",
-      "erc20Handler": "0x3c30b56DEd047fe6225f7004Ea4be1ae70C9026a",
+      "endpoint": "wss://ethereum-sepolia-rpc.publicnode.com",
+      "from": "0x551ac947b80527901b7E2093755dEDA3F9D2eda9",
+      "bridge": "0xA28697Cb36C7bFEbCd495822404CA5092F25e0de",
+      "erc20Handler": "0x0D80076dE8c8C5C11e75Dc29718bF9d32d824D7a",
       "gasLimit": 9000000,
       "maxGasPrice": 20000000000,
       "blockConfirmations": 10
-    },
-    {
-      "name": "rinkeby",
-      "type": "evm",
-      "id": 0,
-      "endpoint": "wss://eth-rinkeby.alchemyapi.io/v2/Pgb6UvWBwyYNRyn1_19HqhSpbRtK-74W",
-      "from": "0x12F0aA01E222D3FBb999A1aD902dc70cbea7000b",
-      "bridge": "0x894E63d6eba8173a291A47979335a745788170Af",
-      "erc20Handler": "0xCAe16A9e0ED433C3612A89755e5580a9f0B6C889",
-      "gasLimit": 8000000,
-      "maxGasPrice": 20000000000,
-      "blockConfirmations": 10
-    },
-    {
-      "name": "polygon",
-      "type": "evm",
-      "id":3,
-      "endpoint":"wss://polygon-mumbai.g.alchemy.com/v2/NVK896meM89QkTJi7AmkHc8MaRa0z1PL",
-      "from":"0x12F0aA01E222D3FBb999A1aD902dc70cbea7000b",
-      "bridge":"0xd1BB2D0f09E35d47d06e62c9c25421BB2Be77DAE",
-      "erc20Handler":"0x97E3650BB89025cB1cDda3aB8A77BD702f0aBFb6",
-      "gasLimit":8000000,
-      "maxGasPrice":20000000000,
-      "blockConfirmations":10
     }
   ]
 }
