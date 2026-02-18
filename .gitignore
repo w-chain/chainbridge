@@ -44,3 +44,4 @@ centrifuge-chain/
 /client_configs
 chainbridge-core-example
 dist/
+config/*.json

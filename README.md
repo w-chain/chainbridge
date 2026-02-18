@@ -1,86 +1,176 @@
-# ChainBridge-core example
-<a href="https://discord.gg/ykXsJKfhgq">
-  <img alt="discord" src="https://img.shields.io/discord/593655374469660673?label=Discord&logo=discord&style=flat" />
-</a>
+# ChainBridge-core Example — Internal Guide
+<a href="https://discord.gg/ykXsJKfhgq"><img alt="discord" src="https://img.shields.io/discord/593655374469660673?label=Discord&logo=discord&style=flat" /></a>
 
-Sygma example is the repository that show an example of running Bridge with chainbridge-core [framework](https://github.com/ChainSafe/chainbridge-core).
+- Audience: internal devs/maintainers
+- Scope: thin example app + CLI that wires ChainSafe chainbridge-core into a runnable relayer
+- Upstream: chainbridge-core framework https://github.com/ChainSafe/chainbridge-core
 
-1. [Installation](#installation)
-2. [Global Flags](#global-flags)
-3. [Usage](#usage)
+## TL;DR
+- Build: `go build ./` → binary `chainbridge`
+- Run: `./chainbridge run --config ./config/relayer_1.json --keystore ./keys --blockstore ./lvldbdata`
+- Docker: `docker-compose up` (set KEYSTORE_PASSWORD; provide config and keys)
 
-## Installation
-Refer to [installation](https://github.com/ChainSafe/chainbridge-docs/blob/develop/docs/installation.md) guide for assistance in installing.
+## Architecture
+- Entry: [main.go](file:///Users/evanstinger/Dev/w-chain/chainbridge/main.go#L10-L12) → [cmd/cmd.go](file:///Users/evanstinger/Dev/w-chain/chainbridge/cmd/cmd.go#L35-L40) (Cobra)
+- Runtime: [example/app.go](file:///Users/evanstinger/Dev/w-chain/chainbridge/example/app.go#L23-L72) orchestrates config load, blockstore, chain setup, relayer loop
+- CLI: root commands (run) + EVM sub-CLI from core (accounts, deploy, etc.)
+- Persistence: LevelDB via core’s `lvldb` + `store.BlockStore`
+- Logging: zerolog
 
-## Global Flags
-
-Though the EVM-CLI and Celo-CLI may differ in their implementation of subcommands, both modules share global flag values.
-
-These global flags are so-called due to their presence in every sucommand, irrespective of their relevance to the subcommand.
-
-In situations where the global flag values are not needed or are otherwise irrelevant, ie passing a `--gasLimit` flag when the `accounts generate` subcommand is invoked, the flag will be ignored.
-
-```bash
-Global Flags:
-      --gasLimit uint               gasLimit used in transactions (default 6721975)
-      --gasPrice uint               gasPrice used for transactions (default 20000000000)
-      --jsonWallet string           Encrypted JSON wallet
-      --jsonWalletPassword string   Password for encrypted JSON wallet
-      --networkid uint              networkid
-      --privateKey string           Private key to use
-      --url string                  node url (default "ws://localhost:8545")
+```mermaid
+flowchart TD
+  A[Start CLI] --> B[Load Flags (viper)]
+  B --> C[Load Config (core.config)]
+  C --> D[Open LevelDB (lvldb)]
+  D --> E[New BlockStore]
+  E --> F[Build Chains]
+  F --> G[New Relayer]
+  G --> H[Start Loop]
+  H -->|errChn| I[Log error + stop]
+  H -->|signals| J[Graceful exit]
 ```
 
-## Usage
-This section will detail how to properly configure `chainbridge-core` and get started with a new, more modular chainbridge.
+## Repo Layout
+- [main.go](file:///Users/evanstinger/Dev/w-chain/chainbridge/main.go) — program entry
+- [cmd/](file:///Users/evanstinger/Dev/w-chain/chainbridge/cmd) — Cobra root, `run` command, mounts EVM CLI
+- [example/app.go](file:///Users/evanstinger/Dev/w-chain/chainbridge/example/app.go) — relayer wiring
+- [config/](file:///Users/evanstinger/Dev/w-chain/chainbridge/config) — example relayer configs
+- [docker-compose.yml](file:///Users/evanstinger/Dev/w-chain/chainbridge/docker-compose.yml) — multi-relayer example
+- [Makefile](file:///Users/evanstinger/Dev/w-chain/chainbridge/Makefile), [Dockerfile](file:///Users/evanstinger/Dev/w-chain/chainbridge/Dockerfile), [.goreleaser.yml](file:///Users/evanstinger/Dev/w-chain/chainbridge/.goreleaser.yml)
 
-### Configuring chains
-Chains are configured as an array under `chains` tag inside provided config. Inside
-[example](./example/app.go) we then go through all chain configs and create an
-instance of `RelayedChain` via `SetupDefaultEVMChain` that registers handlers
-for provided handler addresses in config (currently supported: erc20, erc721, generic).
+## Build & Run
+- Local
+  - `go build ./` or `make build`
+  - `./chainbridge run --config ./config/relayer_1.json --keystore ./keys --blockstore ./lvldbdata`
+- Docker
+  - `docker-compose up` (uses image `chainsafe/chainbridge-core-example:main`)
+  - Config mounts to `/config`; keys to `/keys`; env `KEYSTORE_PASSWORD` required
 
-
-### Run
-Run the chainbridge relayer.
-
-```bash
+Run command surface (from Cobra):
+```text
 Run example app
-
 Usage:
-   run [flags]
-
+  run [flags]
 Flags:
       --blockstore string   Specify path for blockstore (default "./lvldbdata")
       --config string       Path to JSON configuration file
-      --fresh               Disables loading from blockstore at start. Opts will still be used if specified. (default: false)
+      --fresh               Disables loading from blockstore at start (default: false)
   -h, --help                help for run
       --keystore string     Path to keystore directory (default "./keys")
-      --latest              Overrides blockstore and start block, starts from latest block (default: false)
-      --testkey string      Applies a predetermined test keystore to the chains.
+      --latest              Overrides blockstore and start block (default: false)
+      --testkey string      Applies a predetermined test keystore to the chains
 ```
 
-Running the relayer with the following flags:
-1. Path to config: JSON config file path
-2. Path to our relayer's keystore: an ethereum keypair used for signing transactions.
-3. Path to our blockstore: used to record the last block the relayer processed, allowing the relayer to pick up where it left off.
-
-_example:_
-```bash
-./chainbridge-core-example run --config config.json --keystore keys --blockstore blockstore
+### Global Flags
+Available on all subcommands (exposed by core):
+```text
+--gasLimit uint               gasLimit used in transactions (default 6721975)
+--gasPrice uint               gasPrice used for transactions (default 20000000000)
+--jsonWallet string           Encrypted JSON wallet
+--jsonWalletPassword string   Password for encrypted JSON wallet
+--networkid uint              networkid
+--privateKey string           Private key to use
+--url string                  node url (default "ws://localhost:8545")
 ```
 
-# ChainSafe Security Policy
+## Configuration
+- File provided via `--config`; loaded with viper → core `config.GetConfig`
+- Schema (simplified):
+```json
+{
+  "relayer": {},
+  "chains": [
+    {
+      "name": "chain-name",
+      "type": "evm",
+      "id": 1,
+      "endpoint": "wss://…",
+      "from": "0x…",
+      "bridge": "0x…",
+      "erc20Handler": "0x…",
+      "gasLimit": 200000,
+      "maxGasPrice": 20000000000,
+      "blockConfirmations": 10
+    }
+  ]
+}
+```
+- Notes
+  - `type` must be `"evm"` in this example
+  - Handler addresses in config drive which assets/handlers are active
+  - Avoid committing secrets or API keys; keep endpoints public/ephemeral
 
-## Reporting a Security Bug
+### Chain Setup
+```mermaid
+flowchart TD
+  Cfg[ChainConfig (type=evm)] --> S[SetupDefaultEVMChain]
+  S --> H[Register handlers (erc20/erc721/generic)]
+  S --> T[Tx factory (evmtransaction.NewTransaction)]
+  S --> B[Attach BlockStore]
+  S --> RC[RelayedChain]
+```
 
-We take all security issues seriously, if you believe you have found a security issue within a ChainSafe
-project please notify us immediately. If an issue is confirmed, we will take all necessary precautions
-to ensure a statement and patch release is made in a timely manner.
+Key wiring:
+- Iterate `configuration.ChainConfigs`; for `type == "evm"` call
+  [SetupDefaultEVMChain](file:///Users/evanstinger/Dev/w-chain/chainbridge/example/app.go#L39-L45)
+- Append resulting `relayer.RelayedChain` to `chains`
+- Construct relayer with chains + console telemetry; start in a goroutine
 
-Please email us a description of the flaw and any related information (e.g. reproduction steps, version) to
-[security at chainsafe dot io](mailto:security@chainsafe.io).
+## Event Flow (High Level)
+```mermaid
+flowchart LR
+  RPC[EVM RPC] --> F[Filter/Subscribe]
+  F --> D[Decode events]
+  D --> R[Route to handler]
+  R --> TX[Build tx]
+  TX --> S[Sign (keystore)]
+  S --> SUB[Submit tx]
+  SUB --> UPD[Update BlockStore]
+```
+
+## Keystore, Blockstore, Telemetry
+- Keystore
+  - Path via `--keystore`
+  - Password via env (see compose `KEYSTORE_PASSWORD`)
+  - `--testkey` applies a predetermined test key (for dev only)
+- Blockstore
+  - LevelDB path via `--blockstore`; created/opened in
+    [example/app.go](file:///Users/evanstinger/Dev/w-chain/chainbridge/example/app.go#L27-L33)
+  - Tracks last processed block per chain
+- Telemetry
+  - Console exporter used by example: `opentelemetry.ConsoleTelemetry`
+
+## Error Handling & Signals
+- Startup: DB/chain setup errors cause panic in example wiring
+- Runtime: relayer errors propagate on `errChn`; logged then stop signal sent
+- Signals: SIGTERM/SIGINT/SIGHUP/SIGQUIT trigger graceful exit
+
+## CLI Surface
+```mermaid
+flowchart TB
+  root[root] --> run[run]
+  root --> evm[EVM CLI (from core)]
+```
+- Root + `run` defined here:
+  - [cmd/cmd.go](file:///Users/evanstinger/Dev/w-chain/chainbridge/cmd/cmd.go#L15-L33)
+  - EVM subtree from core mounted at root add: [cmd/cmd.go](file:///Users/evanstinger/Dev/w-chain/chainbridge/cmd/cmd.go#L35-L37)
+- List EVM subcommands: `./chainbridge evm --help` (delegated to core)
+
+## Dependencies
+- Declared in [go.mod](file:///Users/evanstinger/Dev/w-chain/chainbridge/go.mod#L5-L11)
+  - `github.com/ChainSafe/chainbridge-core v1.4.2`
+  - `github.com/spf13/cobra`, `github.com/spf13/viper`
+  - `github.com/rs/zerolog`
+  - indirect: `github.com/ethereum/go-ethereum`
+
+## Development
+- Go ≥ 1.15; modules enabled
+- Tests: none local; E2E harness referenced in CI (external)
+- Lint/format: follow standard Go fmt; keep binaries small; avoid logging secrets
+- Release: Docker via [.goreleaser.yml](file:///Users/evanstinger/Dev/w-chain/chainbridge/.goreleaser.yml)
+
+## Security
+- Report vulnerabilities to [security@chainsafe.io](mailto:security@chainsafe.io)
 
 ## License
-
-_GNU Lesser General Public License v3.0_
+GNU Lesser General Public License v3.0
