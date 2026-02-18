@@ -19,15 +19,15 @@
 
 ```mermaid
 flowchart TD
-  A[Start CLI] --> B[Load Flags (viper)]
-  B --> C[Load Config (core.config)]
-  C --> D[Open LevelDB (lvldb)]
-  D --> E[New BlockStore]
-  E --> F[Build Chains]
-  F --> G[New Relayer]
-  G --> H[Start Loop]
-  H -->|errChn| I[Log error + stop]
-  H -->|signals| J[Graceful exit]
+  A["Start CLI"] --> B["Load Flags (viper)"]
+  B --> C["Load Config (core.config)"]
+  C --> D["Open LevelDB (lvldb)"]
+  D --> E["New BlockStore"]
+  E --> F["Build Chains"]
+  F --> G["New Relayer"]
+  G --> H["Start Loop"]
+  H -->|errChn| I["Log error + stop"]
+  H -->|signals| J["Graceful exit"]
 ```
 
 ## Repo Layout
@@ -103,11 +103,11 @@ Available on all subcommands (exposed by core):
 ### Chain Setup
 ```mermaid
 flowchart TD
-  Cfg[ChainConfig (type=evm)] --> S[SetupDefaultEVMChain]
-  S --> H[Register handlers (erc20/erc721/generic)]
-  S --> T[Tx factory (evmtransaction.NewTransaction)]
-  S --> B[Attach BlockStore]
-  S --> RC[RelayedChain]
+  Cfg["ChainConfig (type=evm)"] --> S["SetupDefaultEVMChain"]
+  S --> H["Register handlers (erc20/erc721/generic)"]
+  S --> T["Tx factory (evmtransaction.NewTransaction)"]
+  S --> B["Attach BlockStore"]
+  S --> RC["RelayedChain"]
 ```
 
 Key wiring:
@@ -119,13 +119,13 @@ Key wiring:
 ## Event Flow (High Level)
 ```mermaid
 flowchart LR
-  RPC[EVM RPC] --> F[Filter/Subscribe]
-  F --> D[Decode events]
-  D --> R[Route to handler]
-  R --> TX[Build tx]
-  TX --> S[Sign (keystore)]
-  S --> SUB[Submit tx]
-  SUB --> UPD[Update BlockStore]
+  RPC["EVM RPC"] --> F["Filter/Subscribe"]
+  F --> D["Decode events"]
+  D --> R["Route to handler"]
+  R --> TX["Build tx"]
+  TX --> S["Sign (keystore)"]
+  S --> SUB["Submit tx"]
+  SUB --> UPD["Update BlockStore"]
 ```
 
 ## Keystore, Blockstore, Telemetry
@@ -149,7 +149,7 @@ flowchart LR
 ```mermaid
 flowchart TB
   root[root] --> run[run]
-  root --> evm[EVM CLI (from core)]
+  root --> evm["EVM CLI (from core)"]
 ```
 - Root + `run` defined here:
   - [cmd/cmd.go](file:///Users/evanstinger/Dev/w-chain/chainbridge/cmd/cmd.go#L15-L33)
